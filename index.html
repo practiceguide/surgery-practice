@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>General Surgery In-Training Exam Review: Online Practice and Flashcards</title>
+<style>
+:root{--p:#6B1E2E;--a:#2E7D6B;--tp:#F6E9EC;--ta:#E6F2EF;--ink:#241519;--bg:#fff;--mut:#6b5a5e;--ok:#1d7a46;--bad:#b3261e;--bd:#e3cdd2}
+@media (prefers-color-scheme:dark){:root{--bg:#17100f;--ink:#efe4e6;--tp:#26161a;--ta:#14241f;--mut:#b5a3a7;--bd:#44292f;--p:#e58a9c;--a:#6fcab6;--ok:#58c88a;--bad:#ff8a80}}
+*{box-sizing:border-box}body{margin:0;font:17px/1.55 Georgia,"Times New Roman",serif;background:var(--bg);color:var(--ink)}
+header{background:var(--p);color:#fff;padding:14px 16px}header h1{margin:0;font-size:1.05rem;letter-spacing:.04em}
+@media (prefers-color-scheme:dark){header{background:#3a1520}}
+main{max-width:820px;margin:0 auto;padding:16px}
+h2{color:var(--p);margin:.2em 0 .5em}
+.card{background:var(--tp);border-left:6px solid var(--p);padding:14px 16px;border-radius:6px;margin:12px 0}
+.card.a{background:var(--ta);border-color:var(--a)}
+button{font:inherit;cursor:pointer;border:2px solid var(--p);background:var(--p);color:#fff;border-radius:8px;padding:10px 16px;margin:4px 6px 4px 0}
+button.alt{background:transparent;color:var(--p)}button.warn{background:var(--a);border-color:var(--a)}
+@media (prefers-color-scheme:dark){button{color:#10130c}button.alt{color:var(--p)}}
+button:disabled{opacity:.45;cursor:default}
+.opt{display:block;width:100%;text-align:left;background:var(--bg);color:var(--ink);border:2px solid var(--bd);margin:8px 0;padding:12px 14px;border-radius:8px}
+button.opt.sel{border-color:var(--p);background:var(--tp);color:var(--ink)}.opt.good{border-color:var(--ok);background:rgba(29,122,70,.12)}.opt.wrong{border-color:var(--bad);background:rgba(179,38,30,.1)}
+.stem{white-space:pre-line;margin:.6em 0}.bar{display:flex;justify-content:space-between;color:var(--mut);font-size:.95rem;flex-wrap:wrap;gap:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px;margin:10px 0}
+.grid button{padding:6px 0;margin:0;font-size:.9rem;background:var(--bg);color:var(--ink);border-color:var(--bd)}
+.grid .done{background:var(--tp);border-color:var(--p)}.grid .flag{border-color:var(--a);box-shadow:inset 0 -4px 0 var(--a)}.grid .cur{outline:3px solid var(--p)}
+.fc{min-height:210px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:1.3rem;padding:24px;border:2px solid var(--p);border-radius:12px;background:var(--tp);cursor:pointer;margin:12px 0}
+.fc.back{background:var(--ta);border-color:var(--a);font-size:1.1rem}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid var(--bd);padding:8px;text-align:left}th{background:var(--p);color:#fff}
+@media (prefers-color-scheme:dark){th{color:#10130c}}
+small,.note{color:var(--mut);font-size:.88rem}.expl{margin-top:10px;padding:10px 14px;background:var(--ta);border-left:5px solid var(--a);border-radius:4px}
+select{font:inherit;padding:8px;border-radius:6px;border:2px solid var(--bd);background:var(--bg);color:var(--ink)}
+</style></head><body>
+<header><h1>GENERAL SURGERY IN-TRAINING EXAM REVIEW &middot; ONLINE PRACTICE</h1></header>
+<main id="app"><p class="note">Loading&hellip;</p></main>
+<script>
+"use strict";
+var app=document.getElementById("app"),L="ABCD",IDX=null,S=null,T=null,timer=null,F=null,CARDS=null;
+var DN={PO:"Perioperative care and anesthesia",FN:"Fluids, electrolytes, and nutrition",WI:"Wound, infection, and hematology",CT:"Critical care and trauma",UG:"Esophagus, stomach, and small bowel",CA:"Colon, anorectum, and abdominal wall",HB:"Liver, biliary, pancreas, and spleen",BE:"Breast, endocrine, and head and neck",SO:"Oncology, skin, and soft tissue",VT:"Vascular and transplantation",TP:"Thoracic, pediatric, and other topics",EO:"Evidence, outcomes, and ethics"};
+var store={get:function(k,d){try{var v=localStorage.getItem("surg_"+k);return v?JSON.parse(v):d}catch(e){return d}},set:function(k,v){try{localStorage.setItem("surg_"+k,JSON.stringify(v))}catch(e){}}};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function fmt(t){var m=Math.floor(t/60),s=t%60;return m+":"+(s<10?"0":"")+s}
+function rowHtml(m){var b=store.get("best",{})[m.id];return '<div class="card a"><b>'+esc(m.title)+'</b> <small>'+m.size+' questions'+(b!=null?" &middot; best score "+b+" of "+m.size:"")+'</small><br><button onclick="startSet(\''+m.id+'\')">Start</button>'+(store.get("saved_"+m.id,null)?'<button class="alt" onclick="startSet(\''+m.id+'\',true)">Resume</button>':"")+'</div>'}
+function home(){
+ clearInterval(timer);S=null;T=null;F=null;
+ if(!IDX){fetch("d_index.json").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(x){IDX=x;home()}).catch(function(){app.innerHTML='<h2>Online practice</h2><p class="note">The practice sets could not be loaded. Open this page from its web address with an internet connection.</p>'});return}
+ var h='<h2>'+IDX.total.toLocaleString()+' more practice questions and '+IDX.cards.count+' flashcards</h2><div class="card"><p>This companion site holds the extra practice that does not fit in the printed book: '+IDX.exams.length+' full-length practice examinations of 100 questions weighted like the published in-training examination content outline, and '+IDX.drills.length+' chapter drills that match the 12 chapters of the book. Answers and explanations appear after you finish a set. Work closed book, then read every explanation.</p>'+
+ '<label>Clock for examinations: <select id="clk"><option value="0">Off (untimed)</option><option value="120">120 minutes (72 seconds per item)</option></select></label></div>';
+ h+='<h2>Full-length practice examinations</h2>'+IDX.exams.map(rowHtml).join("");
+ h+='<h2>Chapter drills</h2>'+IDX.drills.map(rowHtml).join("");
+ h+='<h2>Flashcards</h2><div class="card"><p>'+IDX.cards.count+' key facts: staging systems, thresholds, operations, drugs, and classic associations.</p><button onclick="startCards(\'All\')">All cards</button>'+IDX.cards.areas.map(function(a){return '<button class="alt" onclick="startCards(this.dataset.a)" data-a="'+esc(a)+'">'+esc(a)+'</button>'}).join("")+'</div>'+
+ '<p class="note">An independent study aid. It is not affiliated with or endorsed by the American Board of Surgery or any examining body, and it contains no actual examination questions. Verify clinical details against current guidelines. Your progress is saved only in this browser.</p>';
+ app.innerHTML=h;window.scrollTo(0,0)}
+function startSet(id,resume){
+ var clk=document.getElementById("clk");var lim=clk?+clk.value:0;
+ fetch("d_"+id+".json").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(t){
+  T=t;var sv=resume?store.get("saved_"+id,null):null;
+  if(t.kind==="drill")lim=0;
+  S=sv||{id:id,ans:{},flag:{},cur:0,left:lim?lim*60:0,lim:lim};
+  clearInterval(timer);
+  if(S.lim){timer=setInterval(function(){S.left--;var e=document.getElementById("tm");if(e)e.textContent=fmt(Math.max(S.left,0));if(S.left<=0){clearInterval(timer);finish()}persist()},1000)}
+  drawQ()}).catch(function(){alert("This set could not be loaded. Check your internet connection and try again.")})}
+function persist(){store.set("saved_"+S.id,S)}
+function drawQ(){
+ var N=T.items.length,q=T.items[S.cur];persist();
+ var h='<div class="bar"><span>'+esc(T.title)+' &middot; Question '+(S.cur+1)+' of '+N+'</span><span>'+(S.lim?'Time left <b id="tm">'+fmt(S.left)+'</b>':'Untimed')+'</span></div>'+
+ '<div class="grid">'+T.items.map(function(_,k){return'<button class="'+(S.ans[k]!=null?"done ":"")+(S.flag[k]?"flag ":"")+(k==S.cur?"cur":"")+'" onclick="go('+k+')">'+(k+1)+'</button>'}).join("")+'</div>'+
+ '<div class="stem">'+esc(q.stem)+'</div>';
+ q.options.forEach(function(o,k){h+='<button class="opt'+(S.ans[S.cur]===k?" sel":"")+'" onclick="pick('+k+')"><b>'+L[k]+'.</b> '+esc(o)+'</button>'});
+ h+='<button class="alt" onclick="go('+(S.cur-1)+')"'+(S.cur?"":" disabled")+'>Back</button><button class="alt" onclick="go('+(S.cur+1)+')"'+(S.cur<N-1?"":" disabled")+'>Next</button><button class="alt" onclick="flag()">'+(S.flag[S.cur]?"Unflag":"Flag for review")+'</button><button class="warn" onclick="submit()">Finish</button>';
+ app.innerHTML=h;window.scrollTo(0,0)}
+function go(k){if(k<0||k>=T.items.length)return;S.cur=k;drawQ()}
+function pick(k){S.ans[S.cur]=k;drawQ()}
+function flag(){S.flag[S.cur]=!S.flag[S.cur];drawQ()}
+function submit(){var un=T.items.length-Object.keys(S.ans).length;if(un&&!confirm(un+" question(s) are unanswered. Finish anyway?"))return;finish()}
+function finish(){
+ clearInterval(timer);var N=T.items.length,sec={},tot=0,miss=[];
+ T.items.forEach(function(q,k){var s=DN[q.dom]||q.dom;sec[s]=sec[s]||[0,0];sec[s][1]++;if(S.ans[k]===q.answer){sec[s][0]++;tot++}else miss.push(k)});
+ var best=store.get("best",{});if(best[S.id]==null||tot>best[S.id])best[S.id]=tot;store.set("best",best);
+ var hist=store.get("hist",[]);hist.push({t:T.title,n:N,s:tot,d:new Date().toLocaleDateString()});store.set("hist",hist.slice(-30));
+ try{localStorage.removeItem("surg_saved_"+S.id)}catch(e){}
+ var h='<h2>'+esc(T.title)+' results</h2><div class="card"><p style="font-size:1.4rem"><b>'+tot+' of '+N+' correct</b> ('+Math.round(tot*100/N)+' percent)</p><table><tr><th>Category</th><th>Correct</th></tr>'+
+ Object.keys(sec).map(function(k){return"<tr><td>"+esc(k)+"</td><td>"+sec[k][0]+" of "+sec[k][1]+"</td></tr>"}).join("")+'</table>'+
+ '<p class="note">Percent correct is a practice measure only. It is not a predicted examination score.</p></div>'+
+ '<button onclick="review(false)">Review all explanations</button><button class="alt" onclick="review(true)">Review only my misses ('+miss.length+')</button><button class="alt" onclick="home()">Back to home</button>';
+ if(hist.length>1)h+='<h2>Recent attempts</h2><table><tr><th>Set</th><th>Score</th><th>Date</th></tr>'+hist.slice(-8).reverse().map(function(x){return"<tr><td>"+esc(x.t)+"</td><td>"+x.s+" of "+x.n+"</td><td>"+x.d+"</td></tr>"}).join("")+'</table>';
+ app.innerHTML=h;window.scrollTo(0,0)}
+function review(onlyMiss){
+ var h='<h2>'+esc(T.title)+' review</h2><button class="alt" onclick="home()">Back to home</button>';
+ T.items.forEach(function(q,k){var mine=S.ans[k];if(onlyMiss&&mine===q.answer)return;
+  h+='<div class="card"><b>Question '+(k+1)+'</b> <small>'+esc(DN[q.dom]||q.dom)+'</small><div class="stem">'+esc(q.stem)+'</div>';
+  q.options.forEach(function(o,j){h+='<div class="opt '+(j===q.answer?"good":(j===mine?"wrong":""))+'"><b>'+L[j]+'.</b> '+esc(o)+(j===q.answer?" (correct)":"")+(j===mine&&j!==q.answer?" (your answer)":"")+'</div>'});
+  if(mine==null)h+='<p class="note">You left this unanswered.</p>';
+  h+='<div class="expl"><b>Explanation.</b> '+esc(q.explanation)+'</div></div>'});
+ app.innerHTML=h;window.scrollTo(0,0)}
+function startCards(area){
+ function go2(){var known=store.get("known",{});var deck=CARDS.map(function(c,i){return{i:i,c:c}}).filter(function(x){return area==="All"||x.c.area===area});
+  F={area:area,deck:deck,pos:0,back:false,known:known,onlyUnknown:false};drawCard()}
+ if(CARDS){go2();return}
+ fetch("d_cards.json").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(c){CARDS=c;go2()}).catch(function(){alert("The flashcards could not be loaded. Check your internet connection.")})}
+function pool(){return F.deck.filter(function(x){return!F.onlyUnknown||!F.known[x.i]})}
+function drawCard(){
+ var p=pool(),h='<h2>Flashcards: '+esc(F.area)+'</h2><div class="bar"><span>'+F.deck.filter(function(x){return F.known[x.i]}).length+' of '+F.deck.length+' marked known</span><label><input type="checkbox" '+(F.onlyUnknown?"checked":"")+' onchange="F.onlyUnknown=this.checked;F.pos=0;F.back=false;drawCard()"> Hide known cards</label></div>';
+ if(!p.length){h+='<div class="card"><p>Every card in this deck is marked known. Uncheck the box to see them again.</p></div><button class="alt" onclick="home()">Back to home</button>';app.innerHTML=h;return}
+ if(F.pos>=p.length)F.pos=0;var x=p[F.pos];
+ h+='<div class="fc'+(F.back?" back":"")+'" onclick="F.back=!F.back;drawCard()">'+esc(F.back?x.c.back:x.c.front)+'</div><p class="note" style="text-align:center">Card '+(F.pos+1)+' of '+p.length+' &middot; tap the card to flip</p>'+
+ '<button class="alt" onclick="F.pos=(F.pos+p0()-1)%p0();F.back=false;drawCard()">Previous</button><button class="warn" onclick="mark(false)">Review again</button><button onclick="mark(true)">Got it</button><button class="alt" onclick="shuf()">Shuffle</button><button class="alt" onclick="home()">Home</button>';
+ app.innerHTML=h}
+function p0(){return pool().length}
+function mark(k){var x=pool()[F.pos];if(k)F.known[x.i]=1;else delete F.known[x.i];store.set("known",F.known);F.back=false;if(!(F.onlyUnknown&&k))F.pos++;drawCard()}
+function shuf(){for(var i=F.deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=F.deck[i];F.deck[i]=F.deck[j];F.deck[j]=t}F.pos=0;F.back=false;drawCard()}
+home();
+</script></body></html>
